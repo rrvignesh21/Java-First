@@ -1,0 +1,10 @@
+{
+    "java.project.sourcePaths": [
+        ".",
+        "c:\\Users\\rrv\\Downloads"
+    ],
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "c:\\Users\\rrv\\Downloads\\jar_files\\json-20220320.jar"
+    ]
+}

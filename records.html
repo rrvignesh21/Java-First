@@ -1,0 +1,329 @@
+
+  <!DOCTYPE html>
+  <html lang="en">
+  <body>
+  <script src="https://unpkg.com/gojs@2.2.14/release/go.js"></script>
+  <p>
+    This is a minimalist HTML and JavaScript skeleton of the GoJS Sample
+    <a href="https://gojs.net/latest/samples/records.html">records.html</a>. It was automatically generated from a button on the sample page,
+    and does not contain the full HTML. It is intended as a starting point to adapt for your own usage.
+    For many samples, you may need to inspect the
+    <a href="https://github.com/NorthwoodsSoftware/GoJS/blob/master/samples/records.html">full source on Github</a>
+    and copy other files or scripts.
+  </p>
+  <div id="allSampleContent" class="p-4 w-full">
+    <script id="code">
+    function init() {
+
+      // Since 2.2 you can also author concise templates with method chaining instead of GraphObject.make
+      // For details, see https://gojs.net/latest/intro/buildingObjects.html
+      const $ = go.GraphObject.make;  // for conciseness in defining templates
+
+      myDiagram =
+        $(go.Diagram, "myDiagramDiv",
+          {
+            validCycle: go.Diagram.CycleNotDirected,  // don't allow loops
+            // For this sample, automatically show the state of the diagram's model on the page
+            "ModelChanged": e => {
+              if (e.isTransactionFinished) showModel();
+            },
+            "undoManager.isEnabled": true
+          });
+
+      // This template is a Panel that is used to represent each item in a Panel.itemArray.
+      // The Panel is data bound to the item object.
+      var fieldTemplate =
+        $(go.Panel, "TableRow",  // this Panel is a row in the containing Table
+          new go.Binding("portId", "name"),  // this Panel is a "port"
+          {
+            background: "transparent",  // so this port's background can be picked by the mouse
+            fromSpot: go.Spot.Right,  // links only go from the right side to the left side
+            toSpot: go.Spot.Left,
+            // allow drawing links from or to this port:
+            fromLinkable: true, toLinkable: true
+          },
+          $(go.Shape,
+            {
+              width: 12, height: 12, column: 0, strokeWidth: 2, margin: 4,
+              // but disallow drawing links from or to this shape:
+              fromLinkable: false, toLinkable: false
+            },
+            new go.Binding("figure", "figure"),
+            new go.Binding("fill", "color")),
+          $(go.TextBlock,
+            {
+              margin: new go.Margin(0, 5), column: 1, font: "bold 13px sans-serif",
+              alignment: go.Spot.Left,
+              // and disallow drawing links from or to this text:
+              fromLinkable: false, toLinkable: false
+            },
+            new go.Binding("text", "name")),
+          $(go.TextBlock,
+            { margin: new go.Margin(0, 5), column: 2, font: "13px sans-serif", alignment: go.Spot.Left },
+            new go.Binding("text", "info"))
+        );
+
+      // This template represents a whole "record".
+      myDiagram.nodeTemplate =
+        $(go.Node, "Auto",
+          { copyable: false, deletable: false },
+          new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
+          // this rectangular shape surrounds the content of the node
+          $(go.Shape,
+            { fill: "#EEEEEE" }),
+          // the content consists of a header and a list of items
+          $(go.Panel, "Vertical",
+            // this is the header for the whole node
+            $(go.Panel, "Auto",
+              { stretch: go.GraphObject.Horizontal },  // as wide as the whole node
+              $(go.Shape,
+                { fill: "#1570A6", stroke: null }),
+              $(go.TextBlock,
+                {
+                  alignment: go.Spot.Center,
+                  margin: 3,
+                  stroke: "white",
+                  textAlign: "center",
+                  font: "bold 12pt sans-serif"
+                },
+                new go.Binding("text", "key"))),
+            // this Panel holds a Panel for each item object in the itemArray;
+            // each item Panel is defined by the itemTemplate to be a TableRow in this Table
+            $(go.Panel, "Table",
+              {
+                padding: 2,
+                minSize: new go.Size(100, 10),
+                defaultStretch: go.GraphObject.Horizontal,
+                itemTemplate: fieldTemplate
+              },
+              new go.Binding("itemArray", "fields")
+            )  // end Table Panel of items
+          )  // end Vertical Panel
+        );  // end Node
+
+      myDiagram.linkTemplate =
+        $(go.Link,
+          {
+            relinkableFrom: true, relinkableTo: true, // let user reconnect links
+            toShortLength: 4, fromShortLength: 2
+          },
+          $(go.Shape, { strokeWidth: 1.5 }),
+          $(go.Shape, { toArrow: "Standard", stroke: null })
+        );
+
+      myDiagram.model =
+        new go.GraphLinksModel(
+          {
+            copiesArrays: true,
+            copiesArrayObjects: true,
+            linkFromPortIdProperty: "fromPort",
+            linkToPortIdProperty: "toPort",
+            nodeDataArray: [
+              {
+                key: "Record1",
+                fields: [
+                  { name: "field1", info: "", color: "#F7B84B", figure: "Ellipse" },
+                  { name: "field2", info: "the second one", color: "#F25022", figure: "Ellipse" },
+                  { name: "fieldThree", info: "3rd", color: "#00BCF2" }
+                ],
+                loc: "0 0"
+              },
+              {
+                key: "Record2",
+                fields: [
+                  { name: "fieldA", info: "", color: "#FFB900", figure: "Diamond" },
+                  { name: "fieldB", info: "", color: "#F25022", figure: "Rectangle" },
+                  { name: "fieldC", info: "", color: "#7FBA00", figure: "Diamond" },
+                  { name: "fieldD", info: "fourth", color: "#00BCF2", figure: "Rectangle" }
+                ],
+                loc: "280 0"
+              }
+            ],
+            linkDataArray: [
+              { from: "Record1", fromPort: "field1", to: "Record2", toPort: "fieldA" },
+              { from: "Record1", fromPort: "field2", to: "Record2", toPort: "fieldD" },
+              { from: "Record1", fromPort: "fieldThree", to: "Record2", toPort: "fieldB" }
+            ]
+          });
+
+      showModel();  // show the diagram's initial model
+
+      function showModel() {
+        document.getElementById("mySavedModel").textContent = myDiagram.model.toJson();
+      }
+    }
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+
+<div id="sample">
+  <div id="myDiagramDiv" style="border: 1px solid black; width: 100%; height: 300px; position: relative;"><canvas tabindex="0" style="position: absolute; top: 0px; left: 0px; z-index: 2; user-select: none; touch-action: none; width: 1054px; height: 298px;" width="1054" height="298">This text is displayed if your browser does not support the Canvas HTML element.</canvas><div style="position: absolute; overflow: auto; width: 1054px; height: 298px; z-index: 1;"><div style="position: absolute; width: 1px; height: 1px;"></div></div></div>
+  <p>This record mapper shows a number of "fields" for each "record" and how they are mapped between each other.</p>
+  <p>
+    Draw new links by dragging from the background of any field.
+    Reconnect a selected link by dragging its diamond-shaped handle.
+    The "record" Nodes use a <a href="../api/symbols/Panel.html#static-Table" target="api">Panel.Table</a> to place the various fields into rows.
+    Records are not copyable or deletable.
+  </p>
+  <p>For a variation on this sample with selectable fields in the record nodes, see the <a href="selectableFields.html">selectable fields</a> sample.</p>
+  <div>
+    Diagram Model saved in JSON format, automatically updated after each change or undo or redo:
+    <textarea id="mySavedModel" style="width:100%;height:250px">{ "class": "GraphLinksModel",
+  "copiesArrays": true,
+  "copiesArrayObjects": true,
+  "linkFromPortIdProperty": "fromPort",
+  "linkToPortIdProperty": "toPort",
+  "nodeDataArray": [
+{"key":"Record1","fields":[{"name":"field1","info":"","color":"#F7B84B","figure":"Ellipse"},{"name":"field2","info":"the second one","color":"#F25022","figure":"Ellipse"},{"name":"fieldThree","info":"3rd","color":"#00BCF2"}],"loc":"-100 92"},
+{"key":"Record2","fields":[{"name":"fieldA","info":"","color":"#FFB900","figure":"Diamond"},{"name":"fieldB","info":"","color":"#F25022","figure":"Rectangle"},{"name":"fieldC","info":"","color":"#7FBA00","figure":"Diamond"},{"name":"fieldD","info":"fourth","color":"#00BCF2","figure":"Rectangle"}],"loc":"350 93"}
+],
+  "linkDataArray": [
+{"from":"Record1","fromPort":"field1","to":"Record2","toPort":"fieldA"},
+{"from":"Record1","fromPort":"field2","to":"Record2","toPort":"fieldD"},
+{"from":"Record1","fromPort":"fieldThree","to":"Record2","toPort":"fieldB"}
+]}</textarea>
+  </div>
+<p class="text-xs">GoJS version 2.2.14. Copyright 1998-2022 by Northwoods Software.</p></div>
+    <p><a href="https://github.com/NorthwoodsSoftware/GoJS/blob/master/samples/records.html" target="_blank">View this sample page's source on GitHub</a></p><pre class=" language-js">
+    <span class="token keyword">function</span> <span class="token function">init</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+      <span class="token comment">// Since 2.2 you can also author concise templates with method chaining instead of GraphObject.make</span>
+      <span class="token comment">// For details, see https://gojs.net/latest/intro/buildingObjects.html</span>
+      <span class="token keyword">const</span> $ <span class="token operator">=</span> go<span class="token punctuation">.</span>GraphObject<span class="token punctuation">.</span>make<span class="token punctuation">;</span>  <span class="token comment">// for conciseness in defining templates</span>
+
+      myDiagram <span class="token operator">=</span>
+        <span class="token function">$</span><span class="token punctuation">(</span>go<span class="token punctuation">.</span>Diagram<span class="token punctuation">,</span> <span class="token string">"myDiagramDiv"</span><span class="token punctuation">,</span>
+          <span class="token punctuation">{</span>
+            validCycle<span class="token operator">:</span> go<span class="token punctuation">.</span>Diagram<span class="token punctuation">.</span>CycleNotDirected<span class="token punctuation">,</span>  <span class="token comment">// don't allow loops</span>
+            <span class="token comment">// For this sample, automatically show the state of the diagram's model on the page</span>
+            <span class="token string">"ModelChanged"</span><span class="token operator">:</span> <span class="token parameter">e</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+              <span class="token keyword">if</span> <span class="token punctuation">(</span>e<span class="token punctuation">.</span>isTransactionFinished<span class="token punctuation">)</span> <span class="token function">showModel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span><span class="token punctuation">,</span>
+            <span class="token string">"undoManager.isEnabled"</span><span class="token operator">:</span> <span class="token boolean">true</span>
+          <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token comment">// This template is a Panel that is used to represent each item in a Panel.itemArray.</span>
+      <span class="token comment">// The Panel is data bound to the item object.</span>
+      <span class="token keyword">var</span> fieldTemplate <span class="token operator">=</span>
+        <span class="token function">$</span><span class="token punctuation">(</span>go<span class="token punctuation">.</span>Panel<span class="token punctuation">,</span> <span class="token string">"TableRow"</span><span class="token punctuation">,</span>  <span class="token comment">// this Panel is a row in the containing Table</span>
+          <span class="token keyword">new</span> <span class="token class-name">go<span class="token punctuation">.</span>Binding</span><span class="token punctuation">(</span><span class="token string">"portId"</span><span class="token punctuation">,</span> <span class="token string">"name"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>  <span class="token comment">// this Panel is a "port"</span>
+          <span class="token punctuation">{</span>
+            background<span class="token operator">:</span> <span class="token string">"transparent"</span><span class="token punctuation">,</span>  <span class="token comment">// so this port's background can be picked by the mouse</span>
+            fromSpot<span class="token operator">:</span> go<span class="token punctuation">.</span>Spot<span class="token punctuation">.</span>Right<span class="token punctuation">,</span>  <span class="token comment">// links only go from the right side to the left side</span>
+            toSpot<span class="token operator">:</span> go<span class="token punctuation">.</span>Spot<span class="token punctuation">.</span>Left<span class="token punctuation">,</span>
+            <span class="token comment">// allow drawing links from or to this port:</span>
+            fromLinkable<span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span> toLinkable<span class="token operator">:</span> <span class="token boolean">true</span>
+          <span class="token punctuation">}</span><span class="token punctuation">,</span>
+          <span class="token function">$</span><span class="token punctuation">(</span>go<span class="token punctuation">.</span>Shape<span class="token punctuation">,</span>
+            <span class="token punctuation">{</span>
+              width<span class="token operator">:</span> <span class="token number">12</span><span class="token punctuation">,</span> height<span class="token operator">:</span> <span class="token number">12</span><span class="token punctuation">,</span> column<span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">,</span> strokeWidth<span class="token operator">:</span> <span class="token number">2</span><span class="token punctuation">,</span> margin<span class="token operator">:</span> <span class="token number">4</span><span class="token punctuation">,</span>
+              <span class="token comment">// but disallow drawing links from or to this shape:</span>
+              fromLinkable<span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">,</span> toLinkable<span class="token operator">:</span> <span class="token boolean">false</span>
+            <span class="token punctuation">}</span><span class="token punctuation">,</span>
+            <span class="token keyword">new</span> <span class="token class-name">go<span class="token punctuation">.</span>Binding</span><span class="token punctuation">(</span><span class="token string">"figure"</span><span class="token punctuation">,</span> <span class="token string">"figure"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token keyword">new</span> <span class="token class-name">go<span class="token punctuation">.</span>Binding</span><span class="token punctuation">(</span><span class="token string">"fill"</span><span class="token punctuation">,</span> <span class="token string">"color"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+          <span class="token function">$</span><span class="token punctuation">(</span>go<span class="token punctuation">.</span>TextBlock<span class="token punctuation">,</span>
+            <span class="token punctuation">{</span>
+              margin<span class="token operator">:</span> <span class="token keyword">new</span> <span class="token class-name">go<span class="token punctuation">.</span>Margin</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">,</span> column<span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">,</span> font<span class="token operator">:</span> <span class="token string">"bold 13px sans-serif"</span><span class="token punctuation">,</span>
+              alignment<span class="token operator">:</span> go<span class="token punctuation">.</span>Spot<span class="token punctuation">.</span>Left<span class="token punctuation">,</span>
+              <span class="token comment">// and disallow drawing links from or to this text:</span>
+              fromLinkable<span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">,</span> toLinkable<span class="token operator">:</span> <span class="token boolean">false</span>
+            <span class="token punctuation">}</span><span class="token punctuation">,</span>
+            <span class="token keyword">new</span> <span class="token class-name">go<span class="token punctuation">.</span>Binding</span><span class="token punctuation">(</span><span class="token string">"text"</span><span class="token punctuation">,</span> <span class="token string">"name"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+          <span class="token function">$</span><span class="token punctuation">(</span>go<span class="token punctuation">.</span>TextBlock<span class="token punctuation">,</span>
+            <span class="token punctuation">{</span> margin<span class="token operator">:</span> <span class="token keyword">new</span> <span class="token class-name">go<span class="token punctuation">.</span>Margin</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">,</span> column<span class="token operator">:</span> <span class="token number">2</span><span class="token punctuation">,</span> font<span class="token operator">:</span> <span class="token string">"13px sans-serif"</span><span class="token punctuation">,</span> alignment<span class="token operator">:</span> go<span class="token punctuation">.</span>Spot<span class="token punctuation">.</span>Left <span class="token punctuation">}</span><span class="token punctuation">,</span>
+            <span class="token keyword">new</span> <span class="token class-name">go<span class="token punctuation">.</span>Binding</span><span class="token punctuation">(</span><span class="token string">"text"</span><span class="token punctuation">,</span> <span class="token string">"info"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token comment">// This template represents a whole "record".</span>
+      myDiagram<span class="token punctuation">.</span>nodeTemplate <span class="token operator">=</span>
+        <span class="token function">$</span><span class="token punctuation">(</span>go<span class="token punctuation">.</span>Node<span class="token punctuation">,</span> <span class="token string">"Auto"</span><span class="token punctuation">,</span>
+          <span class="token punctuation">{</span> copyable<span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">,</span> deletable<span class="token operator">:</span> <span class="token boolean">false</span> <span class="token punctuation">}</span><span class="token punctuation">,</span>
+          <span class="token keyword">new</span> <span class="token class-name">go<span class="token punctuation">.</span>Binding</span><span class="token punctuation">(</span><span class="token string">"location"</span><span class="token punctuation">,</span> <span class="token string">"loc"</span><span class="token punctuation">,</span> go<span class="token punctuation">.</span>Point<span class="token punctuation">.</span>parse<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">makeTwoWay</span><span class="token punctuation">(</span>go<span class="token punctuation">.</span>Point<span class="token punctuation">.</span>stringify<span class="token punctuation">)</span><span class="token punctuation">,</span>
+          <span class="token comment">// this rectangular shape surrounds the content of the node</span>
+          <span class="token function">$</span><span class="token punctuation">(</span>go<span class="token punctuation">.</span>Shape<span class="token punctuation">,</span>
+            <span class="token punctuation">{</span> fill<span class="token operator">:</span> <span class="token string">"#EEEEEE"</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+          <span class="token comment">// the content consists of a header and a list of items</span>
+          <span class="token function">$</span><span class="token punctuation">(</span>go<span class="token punctuation">.</span>Panel<span class="token punctuation">,</span> <span class="token string">"Vertical"</span><span class="token punctuation">,</span>
+            <span class="token comment">// this is the header for the whole node</span>
+            <span class="token function">$</span><span class="token punctuation">(</span>go<span class="token punctuation">.</span>Panel<span class="token punctuation">,</span> <span class="token string">"Auto"</span><span class="token punctuation">,</span>
+              <span class="token punctuation">{</span> stretch<span class="token operator">:</span> go<span class="token punctuation">.</span>GraphObject<span class="token punctuation">.</span>Horizontal <span class="token punctuation">}</span><span class="token punctuation">,</span>  <span class="token comment">// as wide as the whole node</span>
+              <span class="token function">$</span><span class="token punctuation">(</span>go<span class="token punctuation">.</span>Shape<span class="token punctuation">,</span>
+                <span class="token punctuation">{</span> fill<span class="token operator">:</span> <span class="token string">"#1570A6"</span><span class="token punctuation">,</span> stroke<span class="token operator">:</span> <span class="token keyword">null</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+              <span class="token function">$</span><span class="token punctuation">(</span>go<span class="token punctuation">.</span>TextBlock<span class="token punctuation">,</span>
+                <span class="token punctuation">{</span>
+                  alignment<span class="token operator">:</span> go<span class="token punctuation">.</span>Spot<span class="token punctuation">.</span>Center<span class="token punctuation">,</span>
+                  margin<span class="token operator">:</span> <span class="token number">3</span><span class="token punctuation">,</span>
+                  stroke<span class="token operator">:</span> <span class="token string">"white"</span><span class="token punctuation">,</span>
+                  textAlign<span class="token operator">:</span> <span class="token string">"center"</span><span class="token punctuation">,</span>
+                  font<span class="token operator">:</span> <span class="token string">"bold 12pt sans-serif"</span>
+                <span class="token punctuation">}</span><span class="token punctuation">,</span>
+                <span class="token keyword">new</span> <span class="token class-name">go<span class="token punctuation">.</span>Binding</span><span class="token punctuation">(</span><span class="token string">"text"</span><span class="token punctuation">,</span> <span class="token string">"key"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token comment">// this Panel holds a Panel for each item object in the itemArray;</span>
+            <span class="token comment">// each item Panel is defined by the itemTemplate to be a TableRow in this Table</span>
+            <span class="token function">$</span><span class="token punctuation">(</span>go<span class="token punctuation">.</span>Panel<span class="token punctuation">,</span> <span class="token string">"Table"</span><span class="token punctuation">,</span>
+              <span class="token punctuation">{</span>
+                padding<span class="token operator">:</span> <span class="token number">2</span><span class="token punctuation">,</span>
+                minSize<span class="token operator">:</span> <span class="token keyword">new</span> <span class="token class-name">go<span class="token punctuation">.</span>Size</span><span class="token punctuation">(</span><span class="token number">100</span><span class="token punctuation">,</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                defaultStretch<span class="token operator">:</span> go<span class="token punctuation">.</span>GraphObject<span class="token punctuation">.</span>Horizontal<span class="token punctuation">,</span>
+                itemTemplate<span class="token operator">:</span> fieldTemplate
+              <span class="token punctuation">}</span><span class="token punctuation">,</span>
+              <span class="token keyword">new</span> <span class="token class-name">go<span class="token punctuation">.</span>Binding</span><span class="token punctuation">(</span><span class="token string">"itemArray"</span><span class="token punctuation">,</span> <span class="token string">"fields"</span><span class="token punctuation">)</span>
+            <span class="token punctuation">)</span>  <span class="token comment">// end Table Panel of items</span>
+          <span class="token punctuation">)</span>  <span class="token comment">// end Vertical Panel</span>
+        <span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// end Node</span>
+
+      myDiagram<span class="token punctuation">.</span>linkTemplate <span class="token operator">=</span>
+        <span class="token function">$</span><span class="token punctuation">(</span>go<span class="token punctuation">.</span>Link<span class="token punctuation">,</span>
+          <span class="token punctuation">{</span>
+            relinkableFrom<span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span> relinkableTo<span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span> <span class="token comment">// let user reconnect links</span>
+            toShortLength<span class="token operator">:</span> <span class="token number">4</span><span class="token punctuation">,</span> fromShortLength<span class="token operator">:</span> <span class="token number">2</span>
+          <span class="token punctuation">}</span><span class="token punctuation">,</span>
+          <span class="token function">$</span><span class="token punctuation">(</span>go<span class="token punctuation">.</span>Shape<span class="token punctuation">,</span> <span class="token punctuation">{</span> strokeWidth<span class="token operator">:</span> <span class="token number">1.5</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+          <span class="token function">$</span><span class="token punctuation">(</span>go<span class="token punctuation">.</span>Shape<span class="token punctuation">,</span> <span class="token punctuation">{</span> toArrow<span class="token operator">:</span> <span class="token string">"Standard"</span><span class="token punctuation">,</span> stroke<span class="token operator">:</span> <span class="token keyword">null</span> <span class="token punctuation">}</span><span class="token punctuation">)</span>
+        <span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      myDiagram<span class="token punctuation">.</span>model <span class="token operator">=</span>
+        <span class="token keyword">new</span> <span class="token class-name">go<span class="token punctuation">.</span>GraphLinksModel</span><span class="token punctuation">(</span>
+          <span class="token punctuation">{</span>
+            copiesArrays<span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+            copiesArrayObjects<span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+            linkFromPortIdProperty<span class="token operator">:</span> <span class="token string">"fromPort"</span><span class="token punctuation">,</span>
+            linkToPortIdProperty<span class="token operator">:</span> <span class="token string">"toPort"</span><span class="token punctuation">,</span>
+            nodeDataArray<span class="token operator">:</span> <span class="token punctuation">[</span>
+              <span class="token punctuation">{</span>
+                key<span class="token operator">:</span> <span class="token string">"Record1"</span><span class="token punctuation">,</span>
+                fields<span class="token operator">:</span> <span class="token punctuation">[</span>
+                  <span class="token punctuation">{</span> name<span class="token operator">:</span> <span class="token string">"field1"</span><span class="token punctuation">,</span> info<span class="token operator">:</span> <span class="token string">""</span><span class="token punctuation">,</span> color<span class="token operator">:</span> <span class="token string">"#F7B84B"</span><span class="token punctuation">,</span> figure<span class="token operator">:</span> <span class="token string">"Ellipse"</span> <span class="token punctuation">}</span><span class="token punctuation">,</span>
+                  <span class="token punctuation">{</span> name<span class="token operator">:</span> <span class="token string">"field2"</span><span class="token punctuation">,</span> info<span class="token operator">:</span> <span class="token string">"the second one"</span><span class="token punctuation">,</span> color<span class="token operator">:</span> <span class="token string">"#F25022"</span><span class="token punctuation">,</span> figure<span class="token operator">:</span> <span class="token string">"Ellipse"</span> <span class="token punctuation">}</span><span class="token punctuation">,</span>
+                  <span class="token punctuation">{</span> name<span class="token operator">:</span> <span class="token string">"fieldThree"</span><span class="token punctuation">,</span> info<span class="token operator">:</span> <span class="token string">"3rd"</span><span class="token punctuation">,</span> color<span class="token operator">:</span> <span class="token string">"#00BCF2"</span> <span class="token punctuation">}</span>
+                <span class="token punctuation">]</span><span class="token punctuation">,</span>
+                loc<span class="token operator">:</span> <span class="token string">"0 0"</span>
+              <span class="token punctuation">}</span><span class="token punctuation">,</span>
+              <span class="token punctuation">{</span>
+                key<span class="token operator">:</span> <span class="token string">"Record2"</span><span class="token punctuation">,</span>
+                fields<span class="token operator">:</span> <span class="token punctuation">[</span>
+                  <span class="token punctuation">{</span> name<span class="token operator">:</span> <span class="token string">"fieldA"</span><span class="token punctuation">,</span> info<span class="token operator">:</span> <span class="token string">""</span><span class="token punctuation">,</span> color<span class="token operator">:</span> <span class="token string">"#FFB900"</span><span class="token punctuation">,</span> figure<span class="token operator">:</span> <span class="token string">"Diamond"</span> <span class="token punctuation">}</span><span class="token punctuation">,</span>
+                  <span class="token punctuation">{</span> name<span class="token operator">:</span> <span class="token string">"fieldB"</span><span class="token punctuation">,</span> info<span class="token operator">:</span> <span class="token string">""</span><span class="token punctuation">,</span> color<span class="token operator">:</span> <span class="token string">"#F25022"</span><span class="token punctuation">,</span> figure<span class="token operator">:</span> <span class="token string">"Rectangle"</span> <span class="token punctuation">}</span><span class="token punctuation">,</span>
+                  <span class="token punctuation">{</span> name<span class="token operator">:</span> <span class="token string">"fieldC"</span><span class="token punctuation">,</span> info<span class="token operator">:</span> <span class="token string">""</span><span class="token punctuation">,</span> color<span class="token operator">:</span> <span class="token string">"#7FBA00"</span><span class="token punctuation">,</span> figure<span class="token operator">:</span> <span class="token string">"Diamond"</span> <span class="token punctuation">}</span><span class="token punctuation">,</span>
+                  <span class="token punctuation">{</span> name<span class="token operator">:</span> <span class="token string">"fieldD"</span><span class="token punctuation">,</span> info<span class="token operator">:</span> <span class="token string">"fourth"</span><span class="token punctuation">,</span> color<span class="token operator">:</span> <span class="token string">"#00BCF2"</span><span class="token punctuation">,</span> figure<span class="token operator">:</span> <span class="token string">"Rectangle"</span> <span class="token punctuation">}</span>
+                <span class="token punctuation">]</span><span class="token punctuation">,</span>
+                loc<span class="token operator">:</span> <span class="token string">"280 0"</span>
+              <span class="token punctuation">}</span>
+            <span class="token punctuation">]</span><span class="token punctuation">,</span>
+            linkDataArray<span class="token operator">:</span> <span class="token punctuation">[</span>
+              <span class="token punctuation">{</span> from<span class="token operator">:</span> <span class="token string">"Record1"</span><span class="token punctuation">,</span> fromPort<span class="token operator">:</span> <span class="token string">"field1"</span><span class="token punctuation">,</span> to<span class="token operator">:</span> <span class="token string">"Record2"</span><span class="token punctuation">,</span> toPort<span class="token operator">:</span> <span class="token string">"fieldA"</span> <span class="token punctuation">}</span><span class="token punctuation">,</span>
+              <span class="token punctuation">{</span> from<span class="token operator">:</span> <span class="token string">"Record1"</span><span class="token punctuation">,</span> fromPort<span class="token operator">:</span> <span class="token string">"field2"</span><span class="token punctuation">,</span> to<span class="token operator">:</span> <span class="token string">"Record2"</span><span class="token punctuation">,</span> toPort<span class="token operator">:</span> <span class="token string">"fieldD"</span> <span class="token punctuation">}</span><span class="token punctuation">,</span>
+              <span class="token punctuation">{</span> from<span class="token operator">:</span> <span class="token string">"Record1"</span><span class="token punctuation">,</span> fromPort<span class="token operator">:</span> <span class="token string">"fieldThree"</span><span class="token punctuation">,</span> to<span class="token operator">:</span> <span class="token string">"Record2"</span><span class="token punctuation">,</span> toPort<span class="token operator">:</span> <span class="token string">"fieldB"</span> <span class="token punctuation">}</span>
+            <span class="token punctuation">]</span>
+          <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token function">showModel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// show the diagram's initial model</span>
+
+      <span class="token keyword">function</span> <span class="token function">showModel</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">"mySavedModel"</span><span class="token punctuation">)</span><span class="token punctuation">.</span>textContent <span class="token operator">=</span> myDiagram<span class="token punctuation">.</span>model<span class="token punctuation">.</span><span class="token function">toJson</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    window<span class="token punctuation">.</span><span class="token function">addEventListener</span><span class="token punctuation">(</span><span class="token string">'DOMContentLoaded'</span><span class="token punctuation">,</span> init<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  </pre></div>
+  </body>
+  </html>
